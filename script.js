@@ -1,36 +1,71 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const ctx = document.getElementById('chart').getContext('2d');
+// ✅ تحليل الأسواق وعرض الإشارات
+function analyzeMarket() {
+    const signalBox = document.getElementById("signalBox");
+    
+    // 👇 اختيار عشوائي بين إشارة شراء أو بيع
+    const isBuy = Math.random() > 0.5; 
+    const signalText = isBuy ? "📈 إشارة شراء - السوق في ارتفاع" : "📉 إشارة بيع - السوق في انخفاض";
+    
+    // 👇 تطبيق لون الإشارة
+    signalBox.innerHTML = signalText;
+    signalBox.className = isBuy ? "signal-box buy" : "signal-box sell";
 
-    // بيانات افتراضية للرسم البياني
-    const data = {
-        labels: ['1m', '2m', '3m', '4m', '5m'],
-        datasets: [{
-            label: 'حركة السعر',
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.2)',
-            data: [1.1, 1.3, 1.2, 1.5, 1.4]
-        }]
-    };
+    // ✅ تحديث الرسم البياني
+    updateChart();
+}
 
-    // إنشاء الرسم البياني
-    new Chart(ctx, {
-        type: 'line',
-        data: data,
-        options: { responsive: true }
-    });
+// ✅ رسم الشموع البيانية (شموع يابانية)
+function updateChart() {
+    const ctx = document.getElementById("candleChart").getContext("2d");
 
-    // تحليل بسيط لإعطاء إشارة بيع أو شراء
-    function generateSignal() {
-        const signalBox = document.getElementById('signalBox');
-        const random = Math.random();
-        if (random > 0.5) {
-            signalBox.innerHTML = "🔼 إشارة شراء قوية!";
-            signalBox.className = "signal-box buy";
-        } else {
-            signalBox.innerHTML = "🔽 إشارة بيع قوية!";
-            signalBox.className = "signal-box sell";
-        }
+    // 🔹 بيانات عشوائية لمحاكاة السوق
+    const data = generateRandomCandles();
+
+    // 🔹 حذف الرسم القديم وإنشاء رسم جديد
+    if (window.candleChart) {
+        window.candleChart.destroy();
     }
 
-    setInterval(generateSignal, 5000); // تحديث الإشارة كل 5 ثوانٍ
-});
+    window.candleChart = new Chart(ctx, {
+        type: "candlestick",
+        data: {
+            datasets: [{
+                label: "OTC Market",
+                data: data,
+                color: {
+                    up: "#10b981",
+                    down: "#ef4444",
+                    unchanged: "#94a3b8"
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { type: "time" },
+                y: { ticks: { callback: v => v.toFixed(4) } }
+            }
+        }
+    });
+}
+
+// ✅ توليد بيانات شموع عشوائية
+function generateRandomCandles() {
+    const candles = [];
+    let prevClose = 1.0 + Math.random() * 0.5;
+    const now = new Date();
+
+    for (let i = 30; i >= 0; i--) {
+        const open = prevClose;
+        const high = open * (1 + Math.random() * 0.005);
+        const low = open * (1 - Math.random() * 0.005);
+        const close = low + Math.random() * (high - low);
+        const time = new Date(now - i * 60000); // 1 دقيقة لكل شمعة
+
+        candles.push({ x: time, o: open, h: high, l: low, c: close });
+        prevClose = close;
+    }
+
+    return candles;
+}
